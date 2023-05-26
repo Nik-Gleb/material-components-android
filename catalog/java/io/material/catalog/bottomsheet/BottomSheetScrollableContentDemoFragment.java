@@ -58,7 +58,7 @@ public class BottomSheetScrollableContentDemoFragment extends DemoFragment {
             getContext(), R.style.ThemeOverlay_Catalog_BottomSheetDialog_Scrollable);
     windowPreferencesManager.applyEdgeToEdgePreference(bottomSheetDialog.getWindow());
     bottomSheetDialog.setContentView(R.layout.cat_bottomsheet_scrollable_content);
-    View bottomSheetInternal = bottomSheetDialog.findViewById(R.id.design_bottom_sheet);
+    View bottomSheetInternal = bottomSheetDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
     BottomSheetBehavior.from(bottomSheetInternal).setPeekHeight(400);
     View button = view.findViewById(R.id.bottomsheet_button);
     button.setOnClickListener(v -> bottomSheetDialog.show());

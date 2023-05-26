@@ -224,7 +224,7 @@ public class MaterialCheckBox extends AppCompatCheckBox {
   }
 
   public MaterialCheckBox(Context context, @Nullable AttributeSet attrs) {
-    this(context, attrs, R.attr.checkboxStyle);
+    this(context, attrs, androidx.appcompat.R.attr.checkboxStyle);
   }
 
   public MaterialCheckBox(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
@@ -834,11 +834,11 @@ public class MaterialCheckBox extends AppCompatCheckBox {
 
   private boolean isButtonDrawableLegacy(TintTypedArray attributes) {
     int buttonResourceId = attributes.getResourceId(R.styleable.MaterialCheckBox_android_button, 0);
-    int buttonCompatResourceId =
-        attributes.getResourceId(R.styleable.MaterialCheckBox_buttonCompat, 0);
+    int buttonCompatResourceId = 0;
+        //attributes.getResourceId(R.styleable.MaterialCheckBox_buttonCompat, 0);
     if (VERSION.SDK_INT < 21) {
-      return buttonResourceId == R.drawable.abc_btn_check_material
-          && buttonCompatResourceId == R.drawable.abc_btn_check_material_anim;
+      return buttonResourceId == androidx.appcompat.R.drawable.abc_btn_check_material
+          && buttonCompatResourceId == androidx.appcompat.R.drawable.abc_btn_check_material_anim;
     } else {
       return buttonResourceId == FRAMEWORK_BUTTON_DRAWABLE_RES_ID && buttonCompatResourceId == 0;
     }
@@ -847,8 +847,8 @@ public class MaterialCheckBox extends AppCompatCheckBox {
   private ColorStateList getMaterialThemeColorsTintList() {
     if (materialThemeColorsTintList == null) {
       int[] checkBoxColorsList = new int[CHECKBOX_STATES.length];
-      int colorControlActivated = MaterialColors.getColor(this, R.attr.colorControlActivated);
-      int colorError = MaterialColors.getColor(this, R.attr.colorError);
+      int colorControlActivated = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorControlActivated);
+      int colorError = MaterialColors.getColor(this, androidx.appcompat.R.attr.colorError);
       int colorSurface = MaterialColors.getColor(this, R.attr.colorSurface);
       int colorOnSurface = MaterialColors.getColor(this, R.attr.colorOnSurface);
 

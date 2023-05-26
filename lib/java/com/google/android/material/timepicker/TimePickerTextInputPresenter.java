@@ -129,7 +129,7 @@ class TimePickerTextInputPresenter implements OnSelectionChange, TimePickerPrese
     minuteEditText = minuteTextInput.getTextInput().getEditText();
     if (VERSION.SDK_INT < VERSION_CODES.LOLLIPOP) {
       // Our XML drawable is not colored for pre-lollipop, set color programmatically.
-      int primaryColor = MaterialColors.getColor(timePickerView, R.attr.colorPrimary);
+      int primaryColor = MaterialColors.getColor(timePickerView, androidx.appcompat.R.attr.colorPrimary);
       setCursorDrawableColor(hourEditText, primaryColor);
       setCursorDrawableColor(minuteEditText, primaryColor);
     }
