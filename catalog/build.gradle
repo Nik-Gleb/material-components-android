@@ -31,6 +31,7 @@ dependencies {
 
   api project(':lib')
 
+  //noinspection DependencyNotationArgument
   api compatibility("recyclerViewSelection")
 
   implementation "com.google.errorprone:error_prone_annotations:${errorproneVersion}"
@@ -102,6 +103,7 @@ def srcDirs = [
 android {
   setNamespace("io.material.catalog")
   defaultConfig {
+    //noinspection GroovyConstructorNamedArguments
     manifestPlaceholders = [
       application_name             : 'CatalogApplication',
       application_theme            : 'Catalog',
@@ -144,6 +146,7 @@ android {
     targetCompatibility JavaVersion.VERSION_1_8
   }
   androidResources {
+    //noinspection GrDeprecatedAPIUsage
     additionalParameters '--no-version-vectors'
   }
 }

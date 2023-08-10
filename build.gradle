@@ -1,3 +1,5 @@
+import com.android.build.gradle.tasks.GenerateBuildConfig
+
 buildscript {
   repositories {
     google()
@@ -60,11 +62,11 @@ ext {
   mdcLibraryDir = "com/google/android/material"
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
   delete rootProject.buildDir
 }
 
-private def getTransformedProjectPath(projectPath) {
+private static def getTransformedProjectPath(projectPath) {
   def pathComponents = projectPath.tokenize('/')
   def result = ''
   def currentPath = ''
@@ -82,7 +84,7 @@ private def getTransformedProjectPath(projectPath) {
 /**
  * Return the module dependency for the given compatibility library name.
  */
-def compatibility(name) {
+static def compatibility(name) {
   switch (name) {
     case "annotation":
       return "androidx.annotation:annotation:${androidXVersions.annotation}"
@@ -124,36 +126,38 @@ def compatibility(name) {
 /**
  * Return the project dependency for the given project path.
  */
-def fromPath(path) {
+static def fromPath(path) {
   return getTransformedProjectPath(path)
 }
 
-def getArchivesBaseName(name) {
+static def getArchivesBaseName(name) {
   if (name == 'lib') {
     return 'material'
   }
   def pathComponents = name.tokenize('-')
   def knownComponents = ['lib', 'java', 'com', 'google', 'android', 'material']
-  def firstUnknownComponent = knownComponents.size();
+  def firstUnknownComponent = knownComponents.size()
   for (def i = 0; i < knownComponents.size() && i < pathComponents.size(); i++) {
     if (pathComponents[i] != knownComponents[i]) {
-      firstUnknownComponent = i;
-      break;
+      firstUnknownComponent = i
+      break
     }
   }
   def result = 'material'
   for (def i = firstUnknownComponent; i < pathComponents.size(); i++) {
-    result = result + '-' + pathComponents[i];
+    result = result + '-' + pathComponents[i]
   }
-  return result;
+  return result
 }
 
 subprojects {
-    tasks.withType(Test) {
+    tasks.withType(Test).tap {
+      configureEach {
         maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
         forkEvery = 80
         maxHeapSize = "2048m"
         minHeapSize = "1024m"
+      }
     }
 }
 
@@ -163,7 +167,7 @@ subprojects {
 
   // Disable strict dependency resolution version constraints for test projects
   if (project.name.contains("tests")) {
-    project.configurations.all {
+    project.configurations.configureEach {
       dependencyConstraints.configureEach { dependencyConstraint ->
         dependencyConstraint.version { versionConstraint ->
           versionConstraint.strictly("")
@@ -210,7 +214,7 @@ subprojects {
         if (isAndroidLibrary) {
           def JAVA_RESOURCES_TEMP_DIR = "$buildDir/javaResources"
 
-          task writeVersionFile() {
+          tasks.register('writeVersionFile') {
             def versionFileDir = JAVA_RESOURCES_TEMP_DIR + '/META-INF'
             def versionFileName = mdcLibraryPackage + '_' + getArchivesBaseName(project.name) + '.version'
 
@@ -228,8 +232,8 @@ subprojects {
 
       if (isAndroidLibrary) {
         project.afterEvaluate {
-          project.tasks.all({
-            if (it instanceof com.android.build.gradle.tasks.GenerateBuildConfig) {
+          project.tasks.configureEach({
+            if (it instanceof GenerateBuildConfig) {
               // Disable generating BuildConfig.java
               it.enabled = false
             }

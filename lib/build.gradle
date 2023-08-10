@@ -1,3 +1,4 @@
+//file:noinspection DependencyNotationArgument
 import org.gradle.internal.os.OperatingSystem
 
 apply plugin: 'com.android.library'
@@ -109,7 +110,7 @@ android {
 
   testOptions.unitTests.includeAndroidResources = true
 
-  buildTypes.all {
+  buildTypes.configureEach {
     consumerProguardFiles 'proguard-behaviors.pro', 'proguard-inflater.pro'
   }
 
@@ -118,7 +119,7 @@ android {
   }
 }
 
-task generateJavadocs(type: Javadoc) {
+tasks.register('generateJavadocs', Javadoc) {
   if (project.hasProperty("online")) {
     options.addStringOption("toroot", "/")
     options.addStringOption("hdf", "android.whichdoc online")
@@ -150,13 +151,13 @@ task generateJavadocs(type: Javadoc) {
   }
 }
 
-task getVersion {
+tasks.register('getVersion') {
   doLast {
     println version
   }
 }
 
-task generateApiXml(type: Javadoc) {
+tasks.register('generateApiXml', Javadoc) {
   if (project.hasProperty("apiName")) {
     def jdiff = project.property("jdiffJar")
     def apiName = project.property("apiName")
@@ -184,7 +185,7 @@ task generateApiXml(type: Javadoc) {
   }
 }
 
-task generateJdiffReport(type: Javadoc) {
+tasks.register('generateJdiffReport', Javadoc) {
   if (project.hasProperty('oldApi')) {
     def outputPath = project.hasProperty('outputPath') ? project.property('outputPath') : 'diffs-out'
     def jdiff = project.property('jdiffjar')
@@ -233,6 +234,7 @@ afterEvaluate {
     // Add project and compile dependencies to classpath
     releaseVariant.javaCompileProvider.configure { javaCompileProvider ->
       task.classpath += releaseVariant.getCompileClasspath(null)
+      //noinspection GrDeprecatedAPIUsage
       task.classpath += task.project.files(javaCompileProvider.destinationDir)
       task.source += javaCompileProvider.source
     }
@@ -242,7 +244,7 @@ afterEvaluate {
   }
 }
 
-task androidSourcesJar(type: Jar) {
+tasks.register('androidSourcesJar', Jar) {
   archiveClassifier.set('sources')
   from(android.sourceSets.main.java.srcDirs) {
     // Needed because we have Java sources and resources in same directory
