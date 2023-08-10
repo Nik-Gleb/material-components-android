@@ -4,7 +4,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:7.4.2'
+    classpath 'com.android.tools.build:gradle:8.1.0'
   }
 }
 
@@ -18,8 +18,8 @@ allprojects {
 
 ext {
   compileSdkVersion = 'android-UpsideDownCake'
-  minSdkVersion = 14
-  targetSdkVersion = 33
+  minSdkVersion = 29
+  targetSdkVersion = 34
 
   androidXVersions = [
     annotation            : '1.2.0',
@@ -187,6 +187,7 @@ subprojects {
 
     if (isAndroidLibrary || isAndroidApp || isAndroidTest) {
       project.android {
+        setNamespace("com.google.android.material")
         compileSdkVersion rootProject.ext.compileSdkVersion
 
         defaultConfig.minSdkVersion rootProject.ext.minSdkVersion
