@@ -1,5 +1,3 @@
-import com.android.build.gradle.tasks.GenerateBuildConfig
-
 buildscript {
   repositories {
     google()
@@ -19,27 +17,30 @@ allprojects {
 }
 
 ext {
-  compileSdkVersion = 'android-UpsideDownCake'
+  compileSdkVersion = 34
   minSdkVersion = 29
   targetSdkVersion = 34
 
   androidXVersions = [
-    annotation            : '1.2.0',
-    appCompat             : '1.6.1',
-    cardView              : '1.0.0',
-    constraintlayout      : '2.0.1',
-    coordinatorlayout     : '1.1.0',
-    core                  : '1.6.0',
-    drawerlayout          : '1.1.1',
-    experimental          : '1.0.0',
-    fragment              : '1.2.5',
-    lifecycle             : '2.0.0',
-    recyclerView          : '1.0.0',
-    recyclerViewSelection : '1.0.0',
-    transition            : '1.2.0',
-    vectorDrawable        : '1.1.0',
-    viewpager2            : '1.0.0',
-    dynamicanimation      : '1.0.0',
+    activity                     : '1.8.0-alpha06',
+    annotation                   : '1.2.0',
+    appCompat                    : '1.6.1',
+    cardView                     : '1.0.0',
+    constraintlayout             : '2.0.1',
+    coordinatorlayout            : '1.1.0',
+    core                         : '1.6.0',
+    drawerlayout                 : '1.1.1',
+    experimental                 : '1.0.0',
+    fragment                     : '1.2.5',
+    lifecycle                    : '2.0.0',
+    recyclerView                 : '1.0.0',
+    recyclerViewSelection        : '1.0.0',
+    resourceInspectionAnnotation : '1.0.1',
+    resourceInspectionProcessor  : '1.0.1',
+    transition                   : '1.2.0',
+    vectorDrawable               : '1.1.0',
+    viewpager2                   : '1.0.0',
+    dynamicanimation             : '1.0.0',
   ]
 
   errorproneVersion = '2.15.0'
@@ -57,16 +58,16 @@ ext {
     ? project.property('mavenRepoUrl') : '/tmp/myRepo/')
 
   // Current version of the library (could be in-development/unreleased).
-  mdcLibraryVersion = '1.10.0-alpha02'
+  mdcLibraryVersion = '1.11.0-alpha01'
   mdcLibraryPackage = "com.google.android.material"
   mdcLibraryDir = "com/google/android/material"
 }
 
-tasks.register('clean', Delete) {
+task clean(type: Delete) {
   delete rootProject.buildDir
 }
 
-private static def getTransformedProjectPath(projectPath) {
+private def getTransformedProjectPath(projectPath) {
   def pathComponents = projectPath.tokenize('/')
   def result = ''
   def currentPath = ''
@@ -84,8 +85,10 @@ private static def getTransformedProjectPath(projectPath) {
 /**
  * Return the module dependency for the given compatibility library name.
  */
-static def compatibility(name) {
+def compatibility(name) {
   switch (name) {
+    case "activity":
+      return "androidx.activity:activity:${androidXVersions.activity}"
     case "annotation":
       return "androidx.annotation:annotation:${androidXVersions.annotation}"
     case "appcompat":
@@ -114,6 +117,10 @@ static def compatibility(name) {
       return "androidx.vectordrawable:vectordrawable:${androidXVersions.vectorDrawable}"
     case "recyclerViewSelection":
       return "androidx.recyclerview:recyclerview-selection:${androidXVersions.recyclerViewSelection}"
+    case "resourceInspectionAnnotation":
+      return "androidx.resourceinspection:resourceinspection-annotation:${androidXVersions.resourceInspectionAnnotation}"
+    case "resourceInspectionProcessor":
+      return "androidx.resourceinspection:resourceinspection-processor:${androidXVersions.resourceInspectionProcessor}"
     case "viewpager2":
       return "androidx.viewpager2:viewpager2:${androidXVersions.viewpager2}"
     case "experimental":
@@ -126,38 +133,36 @@ static def compatibility(name) {
 /**
  * Return the project dependency for the given project path.
  */
-static def fromPath(path) {
+def fromPath(path) {
   return getTransformedProjectPath(path)
 }
 
-static def getArchivesBaseName(name) {
+def getArchivesBaseName(name) {
   if (name == 'lib') {
     return 'material'
   }
   def pathComponents = name.tokenize('-')
   def knownComponents = ['lib', 'java', 'com', 'google', 'android', 'material']
-  def firstUnknownComponent = knownComponents.size()
+  def firstUnknownComponent = knownComponents.size();
   for (def i = 0; i < knownComponents.size() && i < pathComponents.size(); i++) {
     if (pathComponents[i] != knownComponents[i]) {
-      firstUnknownComponent = i
-      break
+      firstUnknownComponent = i;
+      break;
     }
   }
   def result = 'material'
   for (def i = firstUnknownComponent; i < pathComponents.size(); i++) {
-    result = result + '-' + pathComponents[i]
+    result = result + '-' + pathComponents[i];
   }
-  return result
+  return result;
 }
 
 subprojects {
-    tasks.withType(Test).tap {
-      configureEach {
+    tasks.withType(Test) {
         maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
         forkEvery = 80
         maxHeapSize = "2048m"
         minHeapSize = "1024m"
-      }
     }
 }
 
@@ -167,7 +172,7 @@ subprojects {
 
   // Disable strict dependency resolution version constraints for test projects
   if (project.name.contains("tests")) {
-    project.configurations.configureEach {
+    project.configurations.all {
       dependencyConstraints.configureEach { dependencyConstraint ->
         dependencyConstraint.version { versionConstraint ->
           versionConstraint.strictly("")
@@ -191,7 +196,6 @@ subprojects {
 
     if (isAndroidLibrary || isAndroidApp || isAndroidTest) {
       project.android {
-        setNamespace("com.google.android.material")
         compileSdkVersion rootProject.ext.compileSdkVersion
 
         defaultConfig.minSdkVersion rootProject.ext.minSdkVersion
@@ -214,7 +218,7 @@ subprojects {
         if (isAndroidLibrary) {
           def JAVA_RESOURCES_TEMP_DIR = "$buildDir/javaResources"
 
-          tasks.register('writeVersionFile') {
+          task writeVersionFile() {
             def versionFileDir = JAVA_RESOURCES_TEMP_DIR + '/META-INF'
             def versionFileName = mdcLibraryPackage + '_' + getArchivesBaseName(project.name) + '.version'
 
@@ -232,8 +236,8 @@ subprojects {
 
       if (isAndroidLibrary) {
         project.afterEvaluate {
-          project.tasks.configureEach({
-            if (it instanceof GenerateBuildConfig) {
+          project.tasks.all({
+            if (it instanceof com.android.build.gradle.tasks.GenerateBuildConfig) {
               // Disable generating BuildConfig.java
               it.enabled = false
             }

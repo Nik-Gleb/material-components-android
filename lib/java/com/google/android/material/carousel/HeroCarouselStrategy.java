@@ -16,7 +16,7 @@
 
 package com.google.android.material.carousel;
 
-import static com.google.android.material.carousel.CarouselStrategyHelper.createLeftAlignedKeylineState;
+import static com.google.android.material.carousel.CarouselStrategyHelper.createKeylineState;
 import static com.google.android.material.carousel.CarouselStrategyHelper.getSmallSizeMax;
 import static com.google.android.material.carousel.CarouselStrategyHelper.getSmallSizeMin;
 import static com.google.android.material.carousel.CarouselStrategyHelper.maxValue;
@@ -34,62 +34,86 @@ import androidx.core.math.MathUtils;
  * A {@link CarouselStrategy} that knows how to size and fit one large item and one small item into
  * a container to create a layout to browse one 'hero' item at a time with a preview item.
  *
- * <p>Note that this strategy resizes Carousel items to take up the full width of the Carousel, save
- * room for the small item.
+ * <p>Note that this strategy resizes Carousel items to take up the full width or height of the
+ * Carousel, save room for the small item.
  *
  * <p>This class will automatically be reversed by {@link CarouselLayoutManager} if being laid out
  * right-to-left and does not need to make any account for layout direction itself.
+ *
+ * <p>For more information, see the <a
+ * href="https://github.com/material-components/material-components-android/blob/master/docs/components/Carousel.md">component
+ * developer guidance</a> and <a href="https://material.io/components/carousel/overview">design
+ * guidelines</a>.
  */
 public class HeroCarouselStrategy extends CarouselStrategy {
 
   private static final int[] SMALL_COUNTS = new int[] {1};
-  private static final int[] MEDIUM_COUNTS = new int[] {0};
+  private static final int[] MEDIUM_COUNTS = new int[] {0, 1};
 
   @Override
   @NonNull
   KeylineState onFirstChildMeasuredWithMargins(@NonNull Carousel carousel, @NonNull View child) {
-    float availableSpace = carousel.getContainerWidth();
+    int availableSpace = carousel.getContainerHeight();
+    if (carousel.isHorizontal()) {
+      availableSpace = carousel.getContainerWidth();
+    }
 
     LayoutParams childLayoutParams = (LayoutParams) child.getLayoutParams();
-    float childHorizontalMargins = childLayoutParams.leftMargin + childLayoutParams.rightMargin;
+    float childMargins = childLayoutParams.topMargin + childLayoutParams.bottomMargin;
 
-    float smallChildWidthMin = getSmallSizeMin(child.getContext()) + childHorizontalMargins;
-    float smallChildWidthMax = getSmallSizeMax(child.getContext()) + childHorizontalMargins;
+    float measuredChildSize = child.getMeasuredWidth() * 2;
 
-    float measuredChildWidth = availableSpace;
-    float targetLargeChildWidth = min(measuredChildWidth + childHorizontalMargins, availableSpace);
+    if (carousel.isHorizontal()) {
+      childMargins = childLayoutParams.leftMargin + childLayoutParams.rightMargin;
+      measuredChildSize = child.getMeasuredHeight() * 2;
+    }
+
+    float smallChildSizeMin = getSmallSizeMin(child.getContext()) + childMargins;
+    float smallChildSizeMax = getSmallSizeMax(child.getContext()) + childMargins;
+
+    float targetLargeChildSize = min(measuredChildSize + childMargins, availableSpace);
     // Ideally we would like to create a balanced arrangement where a small item is 1/3 the size of
     // the large item. Clamp the small target size within our min-max range and as close to 1/3 of
     // the target large item size as possible.
-    float targetSmallChildWidth =
+    float targetSmallChildSize =
         MathUtils.clamp(
-            measuredChildWidth / 3F + childHorizontalMargins,
-            getSmallSizeMin(child.getContext()) + childHorizontalMargins,
-            getSmallSizeMax(child.getContext()) + childHorizontalMargins);
-    float targetMediumChildWidth = (targetLargeChildWidth + targetSmallChildWidth) / 2F;
+            measuredChildSize / 3F + childMargins,
+            getSmallSizeMin(child.getContext()) + childMargins,
+            getSmallSizeMax(child.getContext()) + childMargins);
+    float targetMediumChildSize = (targetLargeChildSize + targetSmallChildSize) / 2F;
 
     // Find the minimum space left for large items after filling the carousel with the most
     // permissible small items to determine a plausible minimum large count.
-    float minAvailableLargeSpace =
-        availableSpace
-            - (smallChildWidthMax * maxValue(SMALL_COUNTS));
-    int largeCountMin = (int) max(1, floor(minAvailableLargeSpace / targetLargeChildWidth));
-    int largeCountMax = (int) ceil(availableSpace / targetLargeChildWidth);
+    float minAvailableLargeSpace = availableSpace - (smallChildSizeMax * maxValue(SMALL_COUNTS));
+    int largeCountMin = (int) max(1, floor(minAvailableLargeSpace / targetLargeChildSize));
+    int largeCountMax = (int) ceil(availableSpace / targetLargeChildSize);
     int[] largeCounts = new int[largeCountMax - largeCountMin + 1];
     for (int i = 0; i < largeCounts.length; i++) {
       largeCounts[i] = largeCountMin + i;
     }
-    Arrangement arrangement = Arrangement.findLowestCostArrangement(
+    boolean isCenterAligned =
+        carousel.getCarouselAlignment() == CarouselLayoutManager.ALIGNMENT_CENTER;
+    Arrangement arrangement =
+        Arrangement.findLowestCostArrangement(
+            availableSpace,
+            targetSmallChildSize,
+            smallChildSizeMin,
+            smallChildSizeMax,
+                isCenterAligned
+                ? doubleCounts(SMALL_COUNTS)
+                : SMALL_COUNTS,
+            targetMediumChildSize,
+                isCenterAligned
+                ? doubleCounts(MEDIUM_COUNTS)
+                : MEDIUM_COUNTS,
+            targetLargeChildSize,
+            largeCounts);
+    return createKeylineState(
+        child.getContext(),
+        childMargins,
         availableSpace,
-        targetSmallChildWidth,
-        smallChildWidthMin,
-        smallChildWidthMax,
-        SMALL_COUNTS,
-        targetMediumChildWidth,
-        MEDIUM_COUNTS,
-        targetLargeChildWidth,
-        largeCounts);
-    return createLeftAlignedKeylineState(
-        child.getContext(), childHorizontalMargins, availableSpace, arrangement);
-  }
+        arrangement,
+        carousel.getCarouselAlignment());
+    }
 }
+

@@ -17,6 +17,7 @@ See [Bottom Sheet documentation](BottomSheet.md) for documentation about
 
 **Contents**
 
+*   [Design & API Documentation](#design-api-documentation)
 *   [Using side sheets](#using-side-sheets)
 *   [Standard side sheet](#standard-side-sheet)
 *   [Modal side sheet](#modal-side-sheet)
@@ -24,6 +25,11 @@ See [Bottom Sheet documentation](BottomSheet.md) for documentation about
 *   [Anatomy and key properties](#anatomy-and-key-properties)
 *   [Predictive Back](#predictive-back)
 *   [Theming](#theming-side-sheets)
+
+## Design & API Documentation
+
+*   [Google Material3 Spec](https://material.io/components/side-sheets/overview)
+*   [API Reference](https://developer.android.com/reference/com/google/android/material/sidesheet/package-summary)
 
 ## Using side sheets
 
@@ -204,7 +210,7 @@ To show a modal side sheet, instantiate a `SideSheetDialog` with the desired
 `context`:
 
 ```kt
-val sideSheetDialog = new SideSheetDialog(requireContext());
+val sideSheetDialog = SideSheetDialog(requireContext());
 ```
 
 Then, you can set the content view of the `SideSheetDialog`:
@@ -263,6 +269,7 @@ Element        | Attribute                   | Related method(s)                
 **Color**      | `app:backgroundTint`        | N/A                                                     | `?attr/colorSurface`
 **Coplanar sibling view id** | `app:coplanarSiblingViewId` | `setCoplanarSiblingViewId`<br/>`setCoplanarSiblingView` | N/A
 **Shape**      | `app:shapeAppearance`       | N/A                                                     | `?attr/shapeAppearanceLargeComponent`
+**Sheet edge** | `android:layout_gravity`    | `setSheetEdge` (modal only)                             | end
 **Elevation**  | `android:elevation`         | N/A                                                     | 0dp
 **Max width**  | `android:maxWidth`          | `setMaxWidth`<br/>`getMaxWidth`                         | N/A
 **Max height** | `android:maxHeight`         | `setMaxHeight`<br/>`getMaxHeight`                       | N/A
@@ -275,6 +282,52 @@ More info about these attributes and how to use them in the
 Behavior                                    | Related method(s)                                                         | Default value
 ------------------------------------------- | ------------------------------------------------------------------------- | -------------
 `app:behavior_draggable`                    | `setDraggable`<br/>`isDraggable`                                          | `true`
+
+### Sheet edge
+You can set the sheet to originate from the left or right side of the screen.
+You can also automatically switch the sheet edge based on layout direction, by
+setting the sheet edge to `start` or `end`.
+
+#### Standard and Coplanar Sheets
+To set a standard or coplanar sheet's edge, set the `gravity` property of the
+side sheet `View`'s `CoordinatorLayout.LayoutParams`, then request a layout pass
+on the side sheet `View`.
+
+```kt
+val layoutParams = sideSheetView.layoutParams
+if (layoutParams is CoordinatorLayout.LayoutParams) {
+  layoutParams.gravity = sheetGravity
+  sideSheetView.requestLayout()
+}
+```
+
+You can also set the sheet edge with XML, by setting `android:layout_gravity`
+to the desired gravity:
+
+```xml
+<FrameLayout
+  android:id="@+id/side_sheet_container"
+  style="@style/Widget.Material3.SideSheet"
+  android:layout_width="256dp"
+  android:layout_height="match_parent"
+  android:layout_gravity="start"
+  app:layout_behavior="@string/side_sheet_behavior">
+  <include layout="@layout/side_sheet_layout" />
+</FrameLayout>
+```
+
+#### Modal Sheets
+To set a modal sheet's edge, pass a `Gravity` constant into `SideSheetDialog`'s
+dedicated `setSheetEdge` method. For example, set the sheet edge to `start` like
+this:
+
+```kt
+sideSheetDialog.setSheetEdge(Gravity.START)
+```
+
+Note: Runtime changes to sheet edges are not supported for modal sheets and may
+not work as expected. If you'd like to change the sheet edge at runtime, you
+should recreate the sheet, then call `setSheetEdge` with the new gravity.
 
 ### Styles
 
@@ -313,18 +366,16 @@ to see how the component behaves when a user swipes back.
 ### Standard and Coplanar (Non-Modal) Side Sheets
 
 To set up Predictive Back for standard or coplanar (non-modal) side sheets using
-`SideSheetBehavior`, create an AndroidX back callback that forwards the system
-`BackEvent` objects to your `SideSheetBehavior`:
+`SideSheetBehavior`, create an AndroidX back callback that forwards
+`BackEventCompat` objects to your `SideSheetBehavior`:
 
 ```kt
 val sideSheetBackCallback = object : OnBackPressedCallback(/* enabled= */false) {
-  @RequiresApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
-  override fun handleOnBackStarted(backEvent: BackEvent) {
+  override fun handleOnBackStarted(backEvent: BackEventCompat) {
     sideSheetBehavior.startBackProgress(backEvent)
   }
 
-  @RequiresApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
-  override fun handleOnBackProgressed(backEvent: BackEvent) {
+  override fun handleOnBackProgressed(backEvent: BackEventCompat) {
     sideSheetBehavior.updateBackProgress(backEvent)
   }
 
@@ -332,7 +383,6 @@ val sideSheetBackCallback = object : OnBackPressedCallback(/* enabled= */false) 
     sideSheetBehavior.handleBackInvoked()
   }
 
-  @RequiresApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
   override fun handleOnBackCancelled() {
     sideSheetBehavior.cancelBackProgress()
   }

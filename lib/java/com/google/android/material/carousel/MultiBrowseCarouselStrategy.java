@@ -16,7 +16,7 @@
 
 package com.google.android.material.carousel;
 
-import static com.google.android.material.carousel.CarouselStrategyHelper.createLeftAlignedKeylineState;
+import static com.google.android.material.carousel.CarouselStrategyHelper.createKeylineState;
 import static com.google.android.material.carousel.CarouselStrategyHelper.getSmallSizeMax;
 import static com.google.android.material.carousel.CarouselStrategyHelper.getSmallSizeMin;
 import static com.google.android.material.carousel.CarouselStrategyHelper.maxValue;
@@ -44,6 +44,11 @@ import androidx.core.math.MathUtils;
  *
  * <p>This class will automatically be reversed by {@link CarouselLayoutManager} if being laid out
  * right-to-left and does not need to make any account for layout direction itself.
+ *
+ * <p>For more information, see the <a
+ * href="https://github.com/material-components/material-components-android/blob/master/docs/components/Carousel.md">component
+ * developer guidance</a> and <a href="https://material.io/components/carousel/overview">design
+ * guidelines</a>.
  */
 public final class MultiBrowseCarouselStrategy extends CarouselStrategy {
 
@@ -78,41 +83,54 @@ public final class MultiBrowseCarouselStrategy extends CarouselStrategy {
   @Override
   @NonNull
   KeylineState onFirstChildMeasuredWithMargins(@NonNull Carousel carousel, @NonNull View child) {
-    float availableSpace = carousel.getContainerWidth();
+    float availableSpace = carousel.getContainerHeight();
+    if (carousel.isHorizontal()) {
+      availableSpace = carousel.getContainerWidth();
+    }
 
     LayoutParams childLayoutParams = (LayoutParams) child.getLayoutParams();
-    float childHorizontalMargins = childLayoutParams.leftMargin + childLayoutParams.rightMargin;
+    float childMargins = childLayoutParams.topMargin + childLayoutParams.bottomMargin;
+    float measuredChildSize = child.getMeasuredHeight();
 
-    float smallChildWidthMin = getSmallSizeMin(child.getContext()) + childHorizontalMargins;
-    float smallChildWidthMax = getSmallSizeMax(child.getContext()) + childHorizontalMargins;
+    if (carousel.isHorizontal()) {
+      childMargins = childLayoutParams.leftMargin + childLayoutParams.rightMargin;
+      measuredChildSize = child.getMeasuredWidth();
+    }
 
-    float measuredChildWidth = child.getMeasuredWidth();
-    float targetLargeChildWidth = min(measuredChildWidth + childHorizontalMargins, availableSpace);
+    float smallChildSizeMin = getSmallSizeMin(child.getContext()) + childMargins;
+    float smallChildSizeMax = getSmallSizeMax(child.getContext()) + childMargins;
+
+    float targetLargeChildSize = min(measuredChildSize + childMargins, availableSpace);
     // Ideally we would like to create a balanced arrangement where a small item is 1/3 the size of
     // the large item and medium items are sized between large and small items. Clamp the small
     // target size within our min-max range and as close to 1/3 of the target large item size as
     // possible.
-    float targetSmallChildWidth =
+    float targetSmallChildSize =
         MathUtils.clamp(
-            measuredChildWidth / 3F + childHorizontalMargins,
-            getSmallSizeMin(child.getContext()) + childHorizontalMargins,
-            getSmallSizeMax(child.getContext()) + childHorizontalMargins);
-    float targetMediumChildWidth = (targetLargeChildWidth + targetSmallChildWidth) / 2F;
+            measuredChildSize / 3F + childMargins,
+            getSmallSizeMin(child.getContext()) + childMargins,
+            getSmallSizeMax(child.getContext()) + childMargins);
+    float targetMediumChildSize = (targetLargeChildSize + targetSmallChildSize) / 2F;
 
     // Create arrays representing the possible count of small, medium, and large items. These are
     // not in an asc./dec. order but are in order of priority. A small count array of { 2, 3, 1 }
     // says that ideally an arrangement with 2 small items is found, then 3 is next most desirable,
     // then finally 1.
+
     int[] smallCounts = SMALL_COUNTS;
     int[] mediumCounts = forceCompactArrangement ? MEDIUM_COUNTS_COMPACT : MEDIUM_COUNTS;
+    if (carousel.getCarouselAlignment() == CarouselLayoutManager.ALIGNMENT_CENTER) {
+      smallCounts = doubleCounts(smallCounts);
+      mediumCounts = doubleCounts(mediumCounts);
+    }
     // Find the minimum space left for large items after filling the carousel with the most
     // permissible medium and small items to determine a plausible minimum large count.
     float minAvailableLargeSpace =
         availableSpace
-            - (targetMediumChildWidth * maxValue(mediumCounts))
-            - (smallChildWidthMax * maxValue(smallCounts));
-    int largeCountMin = (int) max(1, floor(minAvailableLargeSpace / targetLargeChildWidth));
-    int largeCountMax = (int) ceil(availableSpace / targetLargeChildWidth);
+            - (targetMediumChildSize * maxValue(mediumCounts))
+            - (smallChildSizeMax * maxValue(smallCounts));
+    int largeCountMin = (int) max(1, floor(minAvailableLargeSpace / targetLargeChildSize));
+    int largeCountMax = (int) ceil(availableSpace / targetLargeChildSize);
     int[] largeCounts = new int[largeCountMax - largeCountMin + 1];
     for (int i = 0; i < largeCounts.length; i++) {
       largeCounts[i] = largeCountMax - i;
@@ -120,19 +138,20 @@ public final class MultiBrowseCarouselStrategy extends CarouselStrategy {
 
     Arrangement arrangement = Arrangement.findLowestCostArrangement(
         availableSpace,
-        targetSmallChildWidth,
-        smallChildWidthMin,
-        smallChildWidthMax,
+        targetSmallChildSize,
+        smallChildSizeMin,
+        smallChildSizeMax,
         smallCounts,
-        targetMediumChildWidth,
+        targetMediumChildSize,
         mediumCounts,
-        targetLargeChildWidth,
+        targetLargeChildSize,
         largeCounts);
 
-    return createLeftAlignedKeylineState(
+    return createKeylineState(
         child.getContext(),
-        childHorizontalMargins,
+        childMargins,
         availableSpace,
-        arrangement);
+        arrangement,
+        carousel.getCarouselAlignment());
   }
 }

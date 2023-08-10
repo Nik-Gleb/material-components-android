@@ -15,11 +15,34 @@ Carousels contain a collection of items that can move into or out of view
 
 **Contents**
 
+*   [Design & API documentation](#design-api-documentation)
 *   [Using carousel](#using-carousel)
-*   [Multi-browse carousels](#multi-browse-carousels)
+*   [Multi-browse strategy](#multi-browse-strategy)
+*   [Hero strategy](#hero-strategy)
+*   [Fullscreen strategy](#fullscreen-strategy)
+*   [Attributes](#attributes)
 *   [Customizing carousel](#customizing-carousel)
 
+## Design & API Documentation
+
+*   [Google Material3 Spec](https://material.io/components/carousel/overview)
+*   [API reference](https://developer.android.com/reference/com/google/android/material/carousel/package-summary)
+
 ## Using carousel
+
+API and source code:
+
+*   `RecyclerView`
+    *   [Class definition](https://developer.android.com/reference/androidx/recyclerview/widget/RecyclerView)
+*   `CarouselLayoutManager`
+    *   [Class definition](https://developer.android.com/reference/com/google/android/material/carousel/CarouselLayoutManager)
+    *   [Class source](https://github.com/material-components/material-components-android/tree/master/lib/java/com/google/android/material/carousel/CarouselLayoutManager.java)
+*   `CarouselStrategy`
+    *   [Class definition](https://developer.android.com/reference/com/google/android/material/carousel/CarouselStrategy)
+    *   [Class source](https://github.com/material-components/material-components-android/tree/master/lib/java/com/google/android/material/carousel/CarouselStrategy.java)
+*   `MaskableFrameLayout`
+    *   [Class definition](https://developer.android.com/reference/com/google/android/material/carousel/MaskableFrameLayout)
+    *   [Class source](https://github.com/material-components/material-components-android/tree/master/lib/java/com/google/android/material/carousel/MaskableFrameLayout.java)
 
 Before you can use Material carousels, you need to add a dependency on the
 Material Components for Android library. For more information, go to the
@@ -28,11 +51,7 @@ page.
 
 Carousel is built on top of `RecyclerView`. To learn how to use `RecyclerView` to display a list of items, please see [Create dynamic lists with RecyclerView](https://developer.android.com/develop/ui/views/layout/recyclerview).
 
-## Multi-browse carousels
-
-A multi-browse carousel allows quick browsing of many small items, like a photo thumbnail gallery. A start-aligned, multi-browse carousel is the default carousel.
-
-To turn a horizontal list into a multi-browse carousel, first wrap your `RecyclerView`'s item layout in a `MaskableFrameLayout`. `MaskableFrameLayout` is a `FrameLayout` that is able to mask (clip) itself, and its children, to a percentage of its width. When a mask is set to 0%, the the entire view is visible in its original, "unmaksed" width. As a mask approaches 100%, the edges of the view begin to crop in towards the center, leaving a narrower and narrower sliver of the original view visible. Carousel masks and unmasks items as they are scrolled across the viewport to create a stylized look and feel.
+To turn a horizontal list into a carousel, first wrap your `RecyclerView`'s item layout in a `MaskableFrameLayout`. `MaskableFrameLayout` is a `FrameLayout` that is able to mask (clip) itself, and its children, to a percentage of its width. When a mask is set to 0%, the the entire view is visible in its original, "unmasked" width. As a mask approaches 100%, the edges of the view begin to crop in towards the center, leaving a narrower and narrower sliver of the original view visible. Carousel masks and unmasks items as they are scrolled across the viewport to create a stylized look and feel.
 
 ```xml
 <com.google.android.material.carousel.MaskableFrameLayout
@@ -71,7 +90,98 @@ Next, set your `RecyclerView`s layout manager to a new `CarouselLayoutManager`.
 carouselRecyclerView.setLayoutManager(CarouselLayoutManager())
 ```
 
-These are the basic steps to create a carousel with large items at the start of the list followed by medium and small items, depending on the size of the `RecyclerView` container.
+These are the basic steps to create a carousel. The look of the carousel depends
+on which carousel strategy you are using; you can have a
+[multi-browse strategy](#multi-browse-strategy) or
+[hero strategy](#hero-strategy).
+
+## Multi-browse strategy
+
+![A contained, multi-browse Carousel](assets/carousel/multibrowse.png)
+
+API and source code:
+
+*   `MultiBrowseCarouselStrategy`
+    *   [Class definition](https://developer.android.com/reference/com/google/android/material/carousel/MultiBrowseCarouselStrategy)
+    *   [Class source](https://github.com/material-components/material-components-android/tree/master/lib/java/com/google/android/material/carousel/MultiBrowseCarouselStrategy.java)
+
+A multi-browse strategy allows quick browsing of many small items, like a photo
+thumbnail gallery. A start-aligned, multi-browse strategy is the default
+strategy for the carousel.
+
+With a multi-browse strategy, large items are at the start of the list followed
+by medium and small items, depending on the size of the `RecyclerView`
+container.
+
+You can use the multi-browse strategy by passing in no arguments to the
+CarouselLayoutManager constructor: `new CarouselLayoutManager()`.
+
+## Hero strategy
+
+![A contained, hero Carousel](assets/carousel/hero.png)
+
+A hero strategy highlights large content, like movies and other media, for more
+considered browsing and selection. It draws attention and focus to a main
+carousel item while hinting at the next item in line.
+
+With a start-aligned hero strategy, typically there is one large item is at the
+start of the list followed by a small item. With a center-aligned hero strategy,
+there is typically one large item at the middle of the list surrounded by small
+items. When there is one large item, the large item takes up the entire size of
+the `RecyclerView` container, save some space for the small item(s). See [focal alignment](#focal-alignment) for more information about changing alignment of the large items.
+
+![A contained center-aligned Carousel](assets/carousel/hero-center.png)
+
+There may be more than one large item depending on the dimensions of the
+carousel. On a horizontal carousel, the width of a large item will maximally be
+twice its height, and vice versa for vertical carousels. More large items are
+added when the maximum large item size has been reached. For example, horizontal
+carousels with `match_parent` as the width will have more and more large items
+as the screen size grows.
+
+You can use the hero strategy by passing in the strategy to the
+CarouselLayoutManager constructor: `new CarouselLayoutManager(new
+HeroStrategy())`.
+
+With the hero strategy, it is recommended to use the `CarouselSnapHelper` to snap to the nearest item like so:
+
+```
+SnapHelper snapHelper = new CarouselSnapHelper();
+snapHelper.attachToRecyclerView(carouselRecyclerView);
+```
+
+## Fullscreen strategy
+
+![A contained, fullscreen Carousel](assets/carousel/fullscreen.png)
+
+A fullscreen strategy shows one item at a time that takes up the entire space
+of the carousel.
+
+You can use the fullscreen strategy by passing in the strategy to the
+CarouselLayoutManager constructor: `new CarouselLayoutManager(new
+FullScreenStrategy())`.
+
+With the fullscreen strategy, it is recommended to use a vertical orientation
+carousel by either setting the orientation on the CarouselLayoutManager with the
+setter, or through its constructor: `new CarouselLayoutManager(new
+FullScreenCarouselStrategy(), RecyclerView.VERTICAL)`
+
+It is also recommended to use the `CarouselSnapHelper`
+to snap to the nearest item like so:
+
+```
+SnapHelper snapHelper = new CarouselSnapHelper();
+snapHelper.attachToRecyclerView(carouselRecyclerView);
+```
+
+## Attributes
+
+Note that in order to use these attributes on the RecyclerView, CarouselLayoutManager must be set through the RecyclerView attribute `app:layoutManager`.
+
+Element         | Attribute               | Related method(s)      | Default value
+--------------- | ----------------------- | ---------------------- | -------------
+**Orientation** | `android:orientation`   | `setOrientation`       | `vertical` (if layoutManager has been set through xml)
+**Alignment**   | `app:carouselAlignment` | `setCarouselAlignment` | `start`
 
 ## Customizing carousel
 
@@ -85,7 +195,11 @@ The main means of changing the look of carousel is by setting the height of your
 
 ### Reacting to changes in item mask size
 
-If your `RecyclerView`'s item layout contains text or other content that needs to react to changes in the item's mask, you can listen for changes in mask size by setting an `onMaskChangedListener` on your `MaskableFrameLayout` inside your `RecyclerView.ViewHolder`.
+If your `RecyclerView`'s item layout contains text or other content that needs
+to react to changes in the item's mask, you can listen for changes in mask size
+by setting an
+[`onMaskChangedListener`](https://developer.android.com/reference/com/google/android/material/carousel/OnMaskChangedListener)
+on your `MaskableFrameLayout` inside your `RecyclerView.ViewHolder`.
 
 ```kotlin
 (viewHolder.itemView as MaskableFrameLayout).setOnMaskChangedListener(
@@ -98,5 +212,25 @@ If your `RecyclerView`'s item layout contains text or other content that needs t
 ```
 
 In the example above, a title is translated so it appears pinned to the left masking edge of the item. As the item masks and becomes too small for the title, it is faded out.
+
+### Focal Alignment
+
+You can control the alignment of the focal (large) items in the carousel by setting the `app:carousel_alignment` attribute on your RecyclerView, if you are also setting the RecyclerView's LayoutManager through `app:layoutManager`:
+
+```
+    <androidx.recyclerview.widget.RecyclerView
+      ...
+      app:layoutManager="com.google.android.material.carousel.CarouselLayoutManager"
+      app:carousel_alignment="center"
+      android:orientation="horizontal"/>
+```
+
+If CarouselLayoutManager is being set programmatically, you may set the alignment as well programmatically:
+
+```
+carouselLayoutManager.setCarouselAlignment(CarouselLayoutManager.CENTER);
+```
+
+By default, the focal alignment is start-aligned.
 
 

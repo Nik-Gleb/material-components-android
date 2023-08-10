@@ -281,6 +281,7 @@
 
     <!-- Theme overlays. -->
     <item name="dynamicColorThemeOverlay">@style/ThemeOverlay.Material3.DynamicColors.Light</item>
+    <item name="contrastColorThemeOverlay">@style/ThemeOverlay.Material3.DynamicColors.Contrast.Light</item>
   </style>
 
   <style name="Base.V14.Theme.Material3.Dark" parent="Theme.MaterialComponents">
@@ -545,10 +546,15 @@
 
     <!-- Theme overlays. -->
     <item name="dynamicColorThemeOverlay">@style/ThemeOverlay.Material3.DynamicColors.Dark</item>
+    <item name="contrastColorThemeOverlay">@style/ThemeOverlay.Material3.DynamicColors.Contrast.Dark</item>
   </style>
 
   <style name="Base.Theme.Material3.Light" parent="Base.V14.Theme.Material3.Light"/>
   <style name="Base.Theme.Material3.Dark" parent="Base.V14.Theme.Material3.Dark"/>
+
+  <!-- We're not large, so redirect to Base.Theme.Material3 -->
+  <style name="Base.Theme.Material3.Light.DialogWhenLarge" parent="Base.Theme.Material3.Light"/>
+  <style name="Base.Theme.Material3.Dark.DialogWhenLarge" parent="Base.Theme.Material3.Dark"/>
 
   <style name="Base.V14.Theme.MaterialComponents" parent="Base.V14.Theme.MaterialComponents.Bridge">
     <item name="viewInflaterClass">com.google.android.material.theme.MaterialComponentsViewInflater</item>

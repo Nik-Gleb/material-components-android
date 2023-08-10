@@ -16,12 +16,14 @@
 
 package com.google.android.material.carousel;
 
+import static com.google.android.material.carousel.CarouselHelper.createCarouselWithSizeAndOrientation;
 import static com.google.android.material.carousel.CarouselHelper.createCarouselWithWidth;
 import static com.google.android.material.carousel.CarouselHelper.getKeylineMaskPercentage;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.material.carousel.KeylineState.Keyline;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -151,7 +153,7 @@ public class KeylineStateListTest {
 
     float[] locOffsets = new float[] {20F, 50F, 65F};
 
-    List<Keyline> actual = stateList.getLeftState().getKeylines();
+    List<Keyline> actual = stateList.getStartState().getKeylines();
     for (int i = 0; i < actual.size(); i++) {
       assertThat(actual.get(i).locOffset).isEqualTo(locOffsets[i]);
     }
@@ -299,8 +301,8 @@ public class KeylineStateListTest {
             .build();
     KeylineStateList stateList = KeylineStateList.from(createCarouselWithWidth(40), state);
 
-    List<Keyline> startStep = stateList.getLeftState().getKeylines();
-    List<Keyline> endStep = stateList.getRightState().getKeylines();
+    List<Keyline> startStep = stateList.getStartState().getKeylines();
+    List<Keyline> endStep = stateList.getEndState().getKeylines();
     for (int i = 0; i < locOffsets.length; i++) {
       assertThat(startStep.get(i).locOffset).isEqualTo(locOffsets[i]);
       assertThat(endStep.get(i).locOffset).isEqualTo(locOffsets[i]);
@@ -317,7 +319,93 @@ public class KeylineStateListTest {
             .build();
     KeylineStateList stateList = KeylineStateList.from(createCarouselWithWidth(500), state);
 
-    assertThat(stateList.getLeftState().getFirstFocalKeylineIndex()).isEqualTo(0);
-    assertThat(stateList.getLeftState().getLastFocalKeylineIndex()).isEqualTo(3);
+    assertThat(stateList.getStartState().getFirstFocalKeylineIndex()).isEqualTo(0);
+    assertThat(stateList.getStartState().getLastFocalKeylineIndex()).isEqualTo(3);
+  }
+
+  @Test
+  public void testKeylineStateForPosition() {
+    KeylineState state =
+        new KeylineState.Builder(100F)
+            .addKeyline(25F, .5F, 50F)
+            .addKeylineRange(100F, 0F, 100F, 4, true)
+            .addKeyline(475F, .5F, 50F)
+            .build();
+    KeylineStateList stateList = KeylineStateList.from(createCarouselWithWidth(500), state);
+    int itemCount = 10;
+    Map<Integer, KeylineState> positionMap = stateList.getKeylineStateForPositionMap(
+        itemCount, 0, 1000, false);
+    float latestKeylineLoc = positionMap.get(0).getFirstFocalKeyline().loc;
+
+    assertThat(latestKeylineLoc).isEqualTo(stateList.getStartState().getFirstFocalKeyline().loc);
+    // Test that the keylines are always increasing
+    for (int i = 1; i < itemCount; i++) {
+      KeylineState k = positionMap.get(i);
+      if (k == null) {
+        k = stateList.getDefaultState();
+      }
+      float keylineLoc = k.getFirstFocalKeyline().loc;
+      assertThat(keylineLoc).isAtLeast(latestKeylineLoc);
+      latestKeylineLoc = keylineLoc;
+    }
+    assertThat(latestKeylineLoc).isEqualTo(stateList.getEndState().getFirstFocalKeyline().loc);
+  }
+
+  @Test
+  public void testKeylineStateForPositionRTL() {
+    KeylineState state =
+        new KeylineState.Builder(100F)
+            .addKeyline(25F, .5F, 50F)
+            .addKeylineRange(100F, 0F, 100F, 4, true)
+            .addKeyline(475F, .5F, 50F)
+            .build();
+    KeylineStateList stateList = KeylineStateList.from(createCarouselWithWidth(500), state);
+    int itemCount = 10;
+    Map<Integer, KeylineState> positionMap =
+        stateList.getKeylineStateForPositionMap(
+            itemCount, -1000, 0, true);
+    float latestKeylineLoc = positionMap.get(0).getFirstFocalKeyline().loc;
+
+    assertThat(latestKeylineLoc).isEqualTo(stateList.getEndState().getFirstFocalKeyline().loc);
+    // Test that the keylines are always decreasing
+    for (int i = 1; i < itemCount; i++) {
+      KeylineState k = positionMap.get(i);
+      if (k == null) {
+        k = stateList.getDefaultState();
+      }
+      float keylineLoc = k.getFirstFocalKeyline().loc;
+      assertThat(keylineLoc).isAtMost(latestKeylineLoc);
+      latestKeylineLoc = keylineLoc;
+    }
+    assertThat(latestKeylineLoc).isEqualTo(stateList.getStartState().getFirstFocalKeyline().loc);
+  }
+
+  @Test
+  public void testKeylineStateForPositionVertical() {
+    KeylineState state =
+        new KeylineState.Builder(100F)
+            .addKeyline(25F, .5F, 50F)
+            .addKeylineRange(100F, 0F, 100F, 4, true)
+            .addKeyline(475F, .5F, 50F)
+            .build();
+    KeylineStateList stateList = KeylineStateList.from(
+        createCarouselWithSizeAndOrientation(500, CarouselLayoutManager.VERTICAL), state);
+    int itemCount = 10;
+    Map<Integer, KeylineState> positionMap = stateList.getKeylineStateForPositionMap(
+        itemCount, 0, 1000, false);
+    float latestKeylineLoc = positionMap.get(0).getFirstFocalKeyline().loc;
+
+    assertThat(latestKeylineLoc).isEqualTo(stateList.getStartState().getFirstFocalKeyline().loc);
+    // Test that the keylines are always increasing
+    for (int i = 1; i < itemCount; i++) {
+      KeylineState k = positionMap.get(i);
+      if (k == null) {
+        k = stateList.getDefaultState();
+      }
+      float keylineLoc = k.getFirstFocalKeyline().loc;
+      assertThat(keylineLoc).isAtLeast(latestKeylineLoc);
+      latestKeylineLoc = keylineLoc;
+    }
+    assertThat(latestKeylineLoc).isEqualTo(stateList.getEndState().getFirstFocalKeyline().loc);
   }
 }

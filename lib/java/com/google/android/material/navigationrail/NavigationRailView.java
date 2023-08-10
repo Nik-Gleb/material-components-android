@@ -38,10 +38,12 @@ import androidx.annotation.RestrictTo;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.animation.AnimationUtils;
 import com.google.android.material.internal.ThemeEnforcement;
 import com.google.android.material.internal.ViewUtils;
 import com.google.android.material.internal.ViewUtils.RelativePadding;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.resources.MaterialResources;
 
 /**
  * Represents a standard navigation rail view for application. It is an implementation of <a
@@ -94,6 +96,11 @@ import com.google.android.material.navigation.NavigationBarView;
  *     android:contentDescription="@string/my_navigation_rail_fab_content_desc"
  *     app:srcCompat="@drawable/ic_add" /&gt;
  * </pre>
+ *
+ * <p>For more information, see the <a
+ * href="https://github.com/material-components/material-components-android/blob/master/docs/components/NavigationRail.md">component
+ * developer guidance</a> and <a
+ * href="https://material.io/components/navigation-rail/overview">design guidelines</a>.
  */
 public class NavigationRailView extends NavigationBarView {
 
@@ -164,6 +171,21 @@ public class NavigationRailView extends NavigationBarView {
           attributes.getBoolean(
               R.styleable.NavigationRailView_paddingStartSystemWindowInsets, false);
     }
+
+    int largeFontTopPadding =
+        getResources()
+            .getDimensionPixelOffset(R.dimen.m3_navigation_rail_item_padding_top_with_large_font);
+    int largeFontBottomPadding =
+        getResources()
+            .getDimensionPixelOffset(
+                R.dimen.m3_navigation_rail_item_padding_bottom_with_large_font);
+    float progress =
+        AnimationUtils.lerp(0F, 1F, .3F, 1F, MaterialResources.getFontScale(context) - 1F);
+    float topPadding = AnimationUtils.lerp(getItemPaddingTop(), largeFontTopPadding, progress);
+    float bottomPadding =
+        AnimationUtils.lerp(getItemPaddingBottom(), largeFontBottomPadding, progress);
+    setItemPaddingTop(Math.round(topPadding));
+    setItemPaddingBottom(Math.round(bottomPadding));
 
     attributes.recycle();
 

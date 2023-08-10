@@ -43,6 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 /** RTL tests for {@link CarouselLayoutManager}. */
 @RunWith(RobolectricTestRunner.class)
@@ -87,22 +88,15 @@ public class CarouselLayoutManagerRtlTest {
     assertThat(firstChild.getRight()).isEqualTo(DEFAULT_RECYCLER_VIEW_WIDTH);
   }
 
+  @Config(qualifiers = "sw1320dp-w1320dp")
   @Test
   public void testScrollBeyondMaxHorizontalScroll_shouldLimitToMaxScrollOffset() throws Throwable {
     KeylineState keylineState = getTestCenteredKeylineState();
-    layoutManager.setCarouselStrategy(
-        new CarouselStrategy() {
-          @Override
-          KeylineState onFirstChildMeasuredWithMargins(
-              @NonNull Carousel carousel, @NonNull View child) {
-            return keylineState;
-          }
-        });
     setAdapterItems(recyclerView, layoutManager, adapter, createDataSetWithSize(10));
     scrollToPosition(recyclerView, layoutManager, 200);
 
     KeylineState leftState =
-        KeylineStateList.from(layoutManager, KeylineState.reverse(keylineState)).getLeftState();
+        KeylineStateList.from(layoutManager, KeylineState.reverse(keylineState)).getStartState();
 
     MaskableFrameLayout child =
         (MaskableFrameLayout) recyclerView.getChildAt(recyclerView.getChildCount() - 1);
