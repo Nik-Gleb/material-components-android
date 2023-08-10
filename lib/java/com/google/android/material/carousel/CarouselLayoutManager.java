@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A {@link LayoutManager} that can mask and offset items along the scrolling axis, creating a
@@ -95,6 +96,7 @@ public class CarouselLayoutManager extends LayoutManager
 
   private boolean isDebuggingEnabled = false;
   private final DebugItemDecoration debugItemDecoration = new DebugItemDecoration();
+  /** @noinspection NotNullFieldNotInitialized*/
   @NonNull private CarouselStrategy carouselStrategy;
   @Nullable private KeylineStateList keylineStateList;
   // A KeylineState shifted for any current scroll offset.
@@ -195,7 +197,7 @@ public class CarouselLayoutManager extends LayoutManager
     if (attrs != null) {
       TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Carousel);
       setCarouselAlignment(a.getInt(R.styleable.Carousel_carousel_alignment, ALIGNMENT_START));
-      setOrientation(a.getInt(R.styleable.RecyclerView_android_orientation, HORIZONTAL));
+      setOrientation(a.getInt(androidx.recyclerview.R.styleable.RecyclerView_android_orientation, HORIZONTAL));
       a.recycle();
     }
   }
@@ -1027,7 +1029,7 @@ public class CarouselLayoutManager extends LayoutManager
    * <p>This will calculate the horizontal scroll offset needed to place a child at {@code
    * position}'s center at the start-most focal keyline. The returned value might be less or greater
    * than the min and max scroll offsets but this will be clamped in {@link #scrollBy(int, Recycler,
-   * State)} (Recycler, State)} by {@link #calculateShouldHorizontallyScrollBy(int, int, int, int)}.
+   * State)} (Recycler, State)} by calculateShouldHorizontallyScrollBy(int, int, int, int).
    *
    * @param position The position to get the scroll offset to.
    * @param keylineState The keyline state in which to calculate the scroll offset to.
@@ -1292,8 +1294,8 @@ public class CarouselLayoutManager extends LayoutManager
    * Compute the extent of the horizontal scrollbar thumb. This is the size of the thumb inside the
    * scrollbar track.
    *
-   * <p>This method can return an arbitrary unit as long as the unit is shared across {@link
-   * #computeHorizontalScrollExtent(State)} and {@link #computeHorizontalScrollOffset(State)}.
+   * <p>This method can return an arbitrary unit as long as the unit is shared across
+   * computeHorizontalScrollExtent(State) and {@link #computeHorizontalScrollOffset(State)}.
    */
   @Override
   public int computeHorizontalScrollExtent(@NonNull State state) {
@@ -1422,7 +1424,7 @@ public class CarouselLayoutManager extends LayoutManager
           parent.getResources().getDimension(R.dimen.m3_carousel_debug_keyline_width));
       for (Keyline keyline : keylines) {
         linePaint.setColor(ColorUtils.blendARGB(Color.MAGENTA, Color.BLUE, keyline.mask));
-        if (((CarouselLayoutManager) parent.getLayoutManager()).isHorizontal()) {
+        if (((CarouselLayoutManager) Objects.requireNonNull(parent.getLayoutManager())).isHorizontal()) {
         c.drawLine(
             keyline.locOffset,
             ((CarouselLayoutManager) parent.getLayoutManager()).getParentTop(),
